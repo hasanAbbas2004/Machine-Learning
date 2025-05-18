@@ -1,6 +1,6 @@
 # Machine Learning Pipeline for Loan Approval Prediction  
 
-## **What's in this Repository?**  
+## **Repository Details**  
 - A **machine learning pipeline** for predicting loan approvals using:  
   - **Logistic Regression** (interpretable probabilities)  
   - **Random Forest** (robust ensemble model)  
@@ -12,7 +12,7 @@
 - **Parallel training & evaluation** (MPI + OpenMP for speed, but ML is the focus here)  
 - **Performance metrics**: Accuracy, Precision, Recall, F1-score, Confusion Matrix  
 
-## **Why This Project?**  
+## **Problem Statement**  
 - **Problem**: Loan approvals require fast, consistent, and data-driven decisions.  
 - **Challenge**: Manual review is slow, subjective, and lacks scalability.  
 - **Solution**:  
