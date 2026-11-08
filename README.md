@@ -66,6 +66,10 @@ g++ -O2 -fopenmp prediction.cpp random_forest.cpp mlp.cpp logistic_regression.cp
 ./ml_predictor
 ```
 
+Or use the Makefile: `make preprocess`, `make train`, `make predict`.
+
+Pre-trained model files (`*.bin`) and `processed_data.csv` are included, so you can run step 3 straight away without MPI.
+
 OpenMP uses 5 threads per process by default. To change that, compile with `-DOMP_NUM_THREADS=<n>`.
 
 ## Project structure
@@ -84,7 +88,6 @@ loan_data.csv                raw dataset
 
 ## Roadmap
 - Held-out test split with accuracy, precision, recall, F1 and confusion matrix (interface declared in `include/evaluate.h`)
-- Replace the outdated `Makefile` with targets for the three programs above
 
 ## Tech
 C++ · MPI · OpenMP · hand-written ML, no external ML libraries · [fast-cpp-csv-parser](https://github.com/ben-strasser/fast-cpp-csv-parser) for CSV loading

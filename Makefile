@@ -1,70 +1,32 @@
-# Makefile for Parallelized Machine Learning Pipeline
+# Loan approval prediction: hybrid MPI + OpenMP ML pipeline
 
-# Compiler settings
-CC = mpicc
-NVCC = nvcc
-CFLAGS = -fopenmp -O2 -Wall -I./include -lm
-CUDA_FLAGS = -lcudart
+CXX      ?= g++
+MPICXX   ?= mpic++
+CXXFLAGS ?= -O2 -fopenmp
 
-# Directories
-SRC_DIR = src
-OBJ_DIR = obj
-BIN_DIR = bin
-INCLUDE_DIR = include
-RESULTS_DIR = results
+MODELS = random_forest.cpp mlp.cpp logistic_regression.cpp
 
-# Files
-COMMON_SRC = $(SRC_DIR)/common.c
-EVAL_SRC = $(SRC_DIR)/evaluate.c
-DEMO_SRC = $(SRC_DIR)/evaluation_demo.c
+all: loan_preprocessor hybrid_ml_trainer ml_predictor
 
-COMMON_OBJ = $(OBJ_DIR)/common.o
-EVAL_OBJ = $(OBJ_DIR)/evaluate.o
-DEMO_OBJ = $(OBJ_DIR)/evaluation_demo.o
+loan_preprocessor: main.cpp loan_data_preprocessor.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
-# Targets
-DEMO_TARGET = $(BIN_DIR)/evaluation_demo
-EVAL_LIB = $(BIN_DIR)/libevaluate.a
+hybrid_ml_trainer: main_model.cpp $(MODELS)
+	$(MPICXX) $(CXXFLAGS) $^ -o $@
 
-# Default target
-all: directories $(EVAL_LIB) $(DEMO_TARGET)
+ml_predictor: prediction.cpp $(MODELS)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
-# Create necessary directories
-directories:
-	mkdir -p $(OBJ_DIR) $(BIN_DIR) $(RESULTS_DIR)
+preprocess: loan_preprocessor
+	./loan_preprocessor loan_data.csv processed_data.csv
 
-# Compile common utility functions
-$(COMMON_OBJ): $(COMMON_SRC) $(INCLUDE_DIR)/common.h
-	$(CC) $(CFLAGS) -c $< -o $@
+train: hybrid_ml_trainer
+	mpirun -np 3 ./hybrid_ml_trainer processed_data.csv
 
-# Compile evaluation module
-$(EVAL_OBJ): $(EVAL_SRC) $(INCLUDE_DIR)/evaluate.h $(INCLUDE_DIR)/common.h
-	$(CC) $(CFLAGS) -c $< -o $@
+predict: ml_predictor
+	./ml_predictor
 
-# Create evaluation static library
-$(EVAL_LIB): $(COMMON_OBJ) $(EVAL_OBJ)
-	ar rcs $@ $^
-
-# Compile demo application
-$(DEMO_OBJ): $(DEMO_SRC) $(INCLUDE_DIR)/evaluate.h $(INCLUDE_DIR)/common.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Link demo application
-$(DEMO_TARGET): $(DEMO_OBJ) $(EVAL_LIB)
-	$(CC) $(CFLAGS) $< -L$(BIN_DIR) -levaluate -o $@
-
-# Clean build files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -f loan_preprocessor hybrid_ml_trainer ml_predictor *.o *.exe
 
-# Run demo
-run: all
-	mpirun -np 4 $(DEMO_TARGET)
-
-# Install (copy library and headers to system directories)
-install: $(EVAL_LIB)
-	mkdir -p /usr/local/include/ml_pipeline
-	cp $(INCLUDE_DIR)/*.h /usr/local/include/ml_pipeline/
-	cp $(EVAL_LIB) /usr/local/lib/
-
-.PHONY: all clean run directories install
+.PHONY: all preprocess train predict clean
